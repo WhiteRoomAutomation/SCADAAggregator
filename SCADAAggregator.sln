@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27703.2000
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SCADAAggregator", "SCADAAggregator\SCADAAggregator.csproj", "{BE7B5404-2245-4638-9500-CF420D35876D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BE7B5404-2245-4638-9500-CF420D35876D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BE7B5404-2245-4638-9500-CF420D35876D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BE7B5404-2245-4638-9500-CF420D35876D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BE7B5404-2245-4638-9500-CF420D35876D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {2A3B77A7-FA77-4BAC-AC92-1D19D2C5845A}
+	EndGlobalSection
+EndGlobal
