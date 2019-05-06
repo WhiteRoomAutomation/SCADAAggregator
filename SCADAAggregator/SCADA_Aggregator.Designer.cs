@@ -1,6 +1,6 @@
 ﻿namespace SCADAAggregator
 {
-    partial class Service1
+    partial class SCADA_Aggregator
     {
         /// <summary> 
         /// Required designer variable.
@@ -29,7 +29,10 @@
         private void InitializeComponent()
         {
             components = new System.ComponentModel.Container();
-            this.ServiceName = "Service1";
+            this.ServiceName = "SCADA Aggregator";
+            OPCClientsList = new System.Collections.Generic.List<OPCClient>();
+            myThreads = new System.Collections.Generic.List<System.Threading.Thread>();
+
         }
 
         #endregion
