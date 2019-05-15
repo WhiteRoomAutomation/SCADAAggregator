@@ -102,6 +102,7 @@ namespace SCADAAggregator
         public bool bScanning;
         protected System.Timers.Timer ScanningTimer;
         protected System.Timers.Timer SQLTimer;
+        private static log4net.ILog Log { get; set; }
 
 
         private int ScanningRate = 0;
@@ -113,7 +114,7 @@ namespace SCADAAggregator
         private string SQLTable = "";
         private string SQLCatalog = "";
 
-        public OPCClient(string newProgID, int newScanningRate, int newSQLUpdateRate, string newSQLServer, string newSQLUser, string newSQLPass, string newSQLDB, string newSQLTable, string newSQLCatalog)
+        public OPCClient(string newProgID, int newScanningRate, int newSQLUpdateRate, string newSQLServer, string newSQLUser, string newSQLPass, string newSQLDB, string newSQLTable, string newSQLCatalog, log4net.ILog newLog)
         {
             opc_tags = new List<AggregatorTag>();
             //opc_met_tags = new List<AggregatorTag>();
@@ -133,6 +134,7 @@ namespace SCADAAggregator
             SQLDB = newSQLDB;
             SQLTable = newSQLTable;
             SQLCatalog = newSQLCatalog;
+            Log = newLog;
 
         }
 
@@ -149,8 +151,9 @@ namespace SCADAAggregator
             SQLTimer.Interval = 600000;
             SQLTimer.Elapsed += OnTimedSQLPush;
             SQLTimer.AutoReset = false;
-            Console.WriteLine("Scanning Interval {0} SQL Interval {0}",
-                  ScanningTimer.Interval, SQLTimer.Interval);
+            string szMessage = "Scanning Interval {" + ScanningTimer.Interval.ToString() + "} SQL Interval {" + SQLTimer.Interval.ToString() + "}";
+            //Console.WriteLine(szMessage);
+            Log.Info(szMessage);
         }
 
         public bool Equals(string ProgID)
@@ -208,7 +211,7 @@ namespace SCADAAggregator
         //    opc_met_tags.Add(newTag);
         //}
 
-        public ILog Log { get; private set; }
+        //public ILog Log { get; private set; }
         //        using System.Threading;
 
         internal bool IsConnected()
@@ -329,11 +332,14 @@ namespace SCADAAggregator
 
             // Handle adding results.
             bItemAdded = true;
+            iCount = 0;
             foreach (OpcDaItemResult result in results)
             {
                 if (result.Error.Failed)
                 {
-                    Console.WriteLine("Error adding items: {0}", result.Error);
+                    string szMessage = "Error adding item {" + definitions[iCount].ItemId + "} Error Message {" + result.Error.ToString() + "}";
+                    Log.Info(szMessage);
+                    //Console.WriteLine("Error adding items: {0}", result.Error);
                     //Log.Error("Error adding item: [" + ItemID + "] Error: [" + result.Error.ToString() + "]");
                     //bItemAdded = false;
                     try
@@ -355,6 +361,7 @@ namespace SCADAAggregator
                     }
                     //Log.Info("Item [" + ItemID + "] Added successfully");
                 }
+                iCount++;
             }
 
             return bItemAdded;
@@ -394,7 +401,9 @@ namespace SCADAAggregator
                     try
                     {
                         //Log.Info("Sending Sync Read");
-                        Console.WriteLine("Sending Sync Read");
+                        //Console.WriteLine("Sending Sync Read");
+                        string szMessage = "Sending Sync Read for " + myGroup.Name;
+                        Log.Info(szMessage);
                         values = myGroup.Read(myGroup.Items, OpcDaDataSource.Device);
 
                     }
@@ -442,7 +451,9 @@ namespace SCADAAggregator
                         }
                         else
                         {
-                            Console.WriteLine("OPC Item [" + value.Item.ItemId + "] has come back with BAD quality. This does NOT count as a valid update");
+                            string szMessage = "OPC Item [" + value.Item.ItemId + "] has come back with BAD quality. This does NOT count as a valid update";
+                            Log.Info(szMessage);
+                            //Console.WriteLine("OPC Item [" + value.Item.ItemId + "] has come back with BAD quality. This does NOT count as a valid update");
                             //Log.Warn("OPC Item [" + ItemID + "] has come back with BAD quality. This does NOT count as a valid update");
                         }
                         bReadSuccessful = true;
@@ -488,7 +499,7 @@ namespace SCADAAggregator
 
 
 
-        internal void SetLogging(ILog log)
+        internal void SetLogging(log4net.ILog log)
         {
             Log = log;
         }
@@ -593,7 +604,7 @@ namespace SCADAAggregator
             //OpcDaGroupState GroupState;
             foreach (string curTurbine in turbine_list)
             {
-                szGroupName = "AggregatorGroup_" + iGroupCount.ToString();
+                szGroupName = "AggregatorGroup_" + curTurbine;
                 newGroup = myServer.AddGroup(szGroupName);
                 if (newGroup != null)
                 {
@@ -611,8 +622,10 @@ namespace SCADAAggregator
             ReadValues();
 
             // Re-adjust the timer to ensure we run on at the 10 second mark
-            Console.WriteLine("The Elapsed Scanned event was raised at {0:HH:mm:ss.fff}",
-                  e.SignalTime);
+            //Console.WriteLine("The Elapsed Scanned event was raised at {0:HH:mm:ss.fff}",
+            //      e.SignalTime);
+            string szMessage = "The Elapsed Scanned event was raised at {" + e.SignalTime.ToLongTimeString() + "}";
+            Log.Info(szMessage);
             ScanningTimer.Interval = GetScanningInterval();
             ScanningTimer.Start();
            
@@ -624,8 +637,8 @@ namespace SCADAAggregator
             DateTime now = DateTime.Now;
             double iMilliseconds = (((ScanningRate / 1000) - (now.Second % 10)) * 1000 - now.Millisecond);
 
-            Console.WriteLine("Scanning Interval {0}",
-                  iMilliseconds);
+            //Console.WriteLine("Scanning Interval {0}",
+            //      iMilliseconds);
             return iMilliseconds;
         }
 
@@ -639,17 +652,17 @@ namespace SCADAAggregator
             // 300 000 - 3 
             double iMilliseconds = SQLUpdateRate - (((now.Minute % (SQLUpdateRate / 60000)) * 60000) + (now.Second * 1000) + now.Millisecond);
 
-            Console.WriteLine("SQL Scanning Interval {0}",
-                  iMilliseconds);
-            Console.WriteLine("SQLUpdateRate {0} - (Now.Minute {1} % {2} + ((now.Second % 10) * 1000) {3} + Millisecond {4} : CurrentTime {5:HH:mm:ss.fff}",
-                    SQLUpdateRate, now.Minute, SQLUpdateRate / 60000, ((now.Second % 10) * 1000), now.Millisecond, now);
+            //Console.WriteLine("SQL Scanning Interval {0}",
+            //      iMilliseconds);
+            //Console.WriteLine("SQLUpdateRate {0} - (Now.Minute {1} % {2} + ((now.Second % 10) * 1000) {3} + Millisecond {4} : CurrentTime {5:HH:mm:ss.fff}",
+            //        SQLUpdateRate, now.Minute, SQLUpdateRate / 60000, ((now.Second % 10) * 1000), now.Millisecond, now);
             return iMilliseconds;
         }
 
         private void OnTimedSQLPush(Object source, ElapsedEventArgs e)
         {
-            Console.WriteLine("The Elapsed SQL event was raised at {0:HH:mm:ss.fff}",
-                              e.SignalTime);
+            string szMessage = "The Elapsed SQL Event was raised at {" + e.SignalTime.ToLongTimeString() + "}";
+            Log.Info(szMessage);
             SQLConnect();
 
             SQLTimer.Interval = GetSQLScanningInterval();
@@ -713,10 +726,10 @@ namespace SCADAAggregator
             CalcColumn ResultHolder;
 
             try
-            { 
+            {
                 SQLConn.Open();
                 List<CalcColumn> ResultList = new List<CalcColumn>();
-            
+
                 ResultHolder = new CalcColumn(System.DateTime.Now.ToString(), "date_time_stamp");
                 ResultList.Add(ResultHolder);
                 ResultHolder = new CalcColumn(szTurbine, "device_id");
@@ -744,14 +757,14 @@ namespace SCADAAggregator
 
                 string SQLCommandString = "Insert into dbo.[" + SQLTable + "] (";
                 int iCount = 1;
-                foreach(CalcColumn curCalc in ResultList)
+                foreach (CalcColumn curCalc in ResultList)
                 {
                     SQLCommandString += curCalc.ColumnName;
-                    if(iCount != ResultList.Count())
+                    if (iCount != ResultList.Count())
                     {
                         SQLCommandString += ",";
                     }
-                
+
                     iCount++;
                 }
                 iCount = 1;
@@ -773,17 +786,25 @@ namespace SCADAAggregator
                 foreach (CalcColumn curCalc in ResultList)
                 {
                     command.Parameters.AddWithValue("@" + curCalc.ColumnName, curCalc.CalcValue);
-                    Console.WriteLine("ColumnName {0} Value {1}", curCalc.ColumnName, curCalc.CalcValue);
+                    //Console.WriteLine("ColumnName {0} Value {1}", curCalc.ColumnName, curCalc.CalcValue);
                 }
 
                 //SQLConn.Open();
-                Console.WriteLine(SQLCommandString);
+                //Console.WriteLine(SQLCommandString);
+
+                Log.Info(SQLCommandString);
                 int result = command.ExecuteNonQuery();
-                
+
 
                 // Check Error
                 if (result < 0)
-                    Console.WriteLine("Error inserting data into Database!");
+                    //Console.WriteLine("Error inserting data into Database!");
+                    Log.Error("Error inserting data into the Database!");
+            }
+            catch (System.Data.SqlClient.SqlException e)
+            {
+                string szMessage = "Error while inserting data to the SQL Database : " + e.Message;
+                Log.Error(szMessage);
             }
             finally
             {

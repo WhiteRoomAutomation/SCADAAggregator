@@ -16,6 +16,7 @@ using System.Threading;
 using System.IO;
 using CsvHelper;
 using System.Runtime.InteropServices;
+using log4net;
 
 //using System.Runtime.InteropServices;
 
@@ -96,7 +97,7 @@ namespace SCADAAggregator
         [DllImport("advapi32.dll", SetLastError = true)]
         private static extern bool SetServiceStatus(System.IntPtr handle, ref ServiceStatus serviceStatus);
 
-        public ILog Log { get; private set; }
+        public static log4net.ILog Log { get; private set; }
         static System.Timers.Timer myTimer = new System.Timers.Timer();
         //static int alarmCounter = 1;
         //static bool exitFlag = false;
@@ -429,7 +430,7 @@ namespace SCADAAggregator
                     }
                     if(CurrentServer == null)
                     {
-                        CurrentServer = new OPCClient(opcName, ScanningTimer, SQLTimer, SQLServer, SQLUser, SQLPass, SQLDB, SQLTable, SQLCatalog);
+                        CurrentServer = new OPCClient(opcName, ScanningTimer, SQLTimer, SQLServer, SQLUser, SQLPass, SQLDB, SQLTable, SQLCatalog, Log);
                         //CurrentServer.ProgID = opcName;
                         OPCClientsList.Add(CurrentServer);
                     }

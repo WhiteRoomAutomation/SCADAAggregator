@@ -21,6 +21,18 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_1CED0AEFF0584BA78C581E8E18276487"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_28A49D06F28D42AFA3CC703E1C5E25BF"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_38DDC836E9FDB39A112A1001B7DDA5EC"
         "OwnerKey" = "8:_B74F3AFFB4528FDE15B37E3A8876A02C"
         "MsmSig" = "8:_UNDEFINED"
@@ -75,6 +87,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_690DEBEB186E4AB48C36B31DB3F70E1D"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_8F2C8DBEC6204CD9931BCA9CEAA5861F"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -82,6 +100,18 @@
         "Entry"
         {
         "MsmKey" = "8:_97244407EF7C400484168EE5A7BD81F4"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_A7D64DC1EADA4EC4AD525855DA6FB88F"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_A84CC60C17244ED788AA74D2D9AC009B"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -99,8 +129,26 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_CAF843274CC70F6EE4E9A95B3CF68CF5"
+        "OwnerKey" = "8:_97244407EF7C400484168EE5A7BD81F4"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_D7F744AE657948A8A3BFCAC05C08B18A"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_UNDEFINED"
         "OwnerKey" = "8:_97244407EF7C400484168EE5A7BD81F4"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_UNDEFINED"
+        "OwnerKey" = "8:_CAF843274CC70F6EE4E9A95B3CF68CF5"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -236,6 +284,46 @@
             {
             "SourcePath" = "8:..\\SCADAAggregator\\bin\\Debug\\AggregatorConfig.xml"
             "TargetName" = "8:AggregatorConfig.xml"
+            "Tag" = "8:"
+            "Folder" = "8:_9817845A03F241D09B51EC01EACCDCF9"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_1CED0AEFF0584BA78C581E8E18276487"
+            {
+            "SourcePath" = "8:..\\SCADAAggregator\\bin\\Release\\Common.Logging.xml"
+            "TargetName" = "8:Common.Logging.xml"
+            "Tag" = "8:"
+            "Folder" = "8:_9817845A03F241D09B51EC01EACCDCF9"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_28A49D06F28D42AFA3CC703E1C5E25BF"
+            {
+            "SourcePath" = "8:..\\SCADAAggregator\\bin\\Release\\CsvHelper.xml"
+            "TargetName" = "8:CsvHelper.xml"
             "Tag" = "8:"
             "Folder" = "8:_9817845A03F241D09B51EC01EACCDCF9"
             "Condition" = "8:"
@@ -407,10 +495,70 @@
             "IsDependency" = "11:TRUE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_690DEBEB186E4AB48C36B31DB3F70E1D"
+            {
+            "SourcePath" = "8:..\\SCADAAggregator\\bin\\Release\\System.ValueTuple.xml"
+            "TargetName" = "8:System.ValueTuple.xml"
+            "Tag" = "8:"
+            "Folder" = "8:_9817845A03F241D09B51EC01EACCDCF9"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_8F2C8DBEC6204CD9931BCA9CEAA5861F"
             {
             "SourcePath" = "8:..\\SCADAAggregator\\bin\\Release\\install.bat"
             "TargetName" = "8:install.bat"
+            "Tag" = "8:"
+            "Folder" = "8:_9817845A03F241D09B51EC01EACCDCF9"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_A7D64DC1EADA4EC4AD525855DA6FB88F"
+            {
+            "SourcePath" = "8:..\\SCADAAggregator\\bin\\Release\\log4net.config"
+            "TargetName" = "8:log4net.config"
+            "Tag" = "8:"
+            "Folder" = "8:_9817845A03F241D09B51EC01EACCDCF9"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_A84CC60C17244ED788AA74D2D9AC009B"
+            {
+            "SourcePath" = "8:..\\SCADAAggregator\\bin\\Release\\Common.Logging.Core.xml"
+            "TargetName" = "8:Common.Logging.Core.xml"
             "Tag" = "8:"
             "Folder" = "8:_9817845A03F241D09B51EC01EACCDCF9"
             "Condition" = "8:"
@@ -489,6 +637,57 @@
             "IsDependency" = "11:TRUE"
             "IsolateTo" = "8:"
             }
+            "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_CAF843274CC70F6EE4E9A95B3CF68CF5"
+            {
+            "AssemblyRegister" = "3:1"
+            "AssemblyIsInGAC" = "11:FALSE"
+            "AssemblyAsmDisplayName" = "8:log4net, Version=2.0.8.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL"
+                "ScatterAssemblies"
+                {
+                    "_CAF843274CC70F6EE4E9A95B3CF68CF5"
+                    {
+                    "Name" = "8:log4net.dll"
+                    "Attributes" = "3:512"
+                    }
+                }
+            "SourcePath" = "8:log4net.dll"
+            "TargetName" = "8:"
+            "Tag" = "8:"
+            "Folder" = "8:_9817845A03F241D09B51EC01EACCDCF9"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:TRUE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_D7F744AE657948A8A3BFCAC05C08B18A"
+            {
+            "SourcePath" = "8:..\\SCADAAggregator\\bin\\Release\\log4net.xml"
+            "TargetName" = "8:log4net.xml"
+            "Tag" = "8:"
+            "Folder" = "8:_9817845A03F241D09B51EC01EACCDCF9"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
         }
         "FileType"
         {
@@ -546,7 +745,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:Setup"
         "ProductCode" = "8:{C6DF996D-85C6-4A89-8F3F-DDF24651186F}"
-        "PackageCode" = "8:{5ADBBA0A-731E-461E-8EF4-CF013A624FBA}"
+        "PackageCode" = "8:{B6349E9E-B00A-467C-8310-D9874EE7ACCF}"
         "UpgradeCode" = "8:{4C40D901-D93A-4731-9294-D727AC4D4153}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"

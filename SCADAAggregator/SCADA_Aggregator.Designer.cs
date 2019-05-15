@@ -1,4 +1,6 @@
-﻿namespace SCADAAggregator
+﻿using Common.Logging;
+
+namespace SCADAAggregator
 {
     partial class SCADA_Aggregator
     {
@@ -32,6 +34,7 @@
             this.ServiceName = "SCADA Aggregator";
             OPCClientsList = new System.Collections.Generic.List<OPCClient>();
             myThreads = new System.Collections.Generic.List<System.Threading.Thread>();
+            Log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         }
 
