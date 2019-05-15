@@ -15,28 +15,65 @@ using Common.Logging;
 using System.Threading;
 using System.IO;
 using CsvHelper;
+using System.Data.SqlClient;
+using System.Configuration.Install;
 
 namespace SCADAAggregator
 {
+    [RunInstaller(true)]
+    public partial class AggregateServiceInstaller : Installer
+    {
+        public AggregateServiceInstaller()
+        {
+            //Instantiate and configure a ServiceProcessInstaller
+            ServiceProcessInstaller PollingService = new ServiceProcessInstaller();
+            PollingService.Account = ServiceAccount.LocalSystem;
+
+            //Instantiate and configure a ServiceInstaller
+            ServiceInstaller SCADAInstaller = new ServiceInstaller();
+            SCADAInstaller.DisplayName = "GAMESA SCADA Aggregator";
+            SCADAInstaller.ServiceName = "GAMESA SCADA Aggregator";
+            SCADAInstaller.StartType = ServiceStartMode.Automatic;
+
+            //Add both the service process installer and the service installer to the
+            //Installers collection, which is inherited from the Installer base class.
+            Installers.Add(SCADAInstaller);
+            Installers.Add(PollingService);
+        }
+    }
+
     public class ClientTag
     {
         public ClientTag(string newItem, AggregatorTag newTag)
         {
             CollectedValues = new List<OpcDaItemValue>();
             OPCTag = newItem;
-            Scaling = newTag.Scaling;
-            WBI_Column = newTag.WBI_Column;
-            Transform = newTag.Transform;
+            //Scaling = newTag.Scaling;
+            WBI_Columns = new List<string>(newTag.WBI_Columns);
+            //WBI_Columns.Add(newTag.WBI_Column);
+            Transforms = new List<string>(newTag.Transforms);
+            //Transforms.Add(newTag.Transform);
             bAdded = false;
         }
         public List<OpcDaItemValue> CollectedValues;
+        public bool bAdded { get; set; }
         protected OpcDaItem myItem;
         public string OPCTag { get; set; }
-        public string Scaling { get; set; }
-        public string WBI_Column { get; set; }
-        public string Transform { get; set; }
-        public bool bAdded { get; set; }
+        //public string Scaling { get; set; }
+        public List<string> WBI_Columns { get; set; }
+        public List<string> Transforms { get; set; }
         
+    }
+
+    public class CalcColumn
+    {
+        public CalcColumn(string szValue, string szColumnName)
+        {
+            CalcValue = szValue;
+            ColumnName = szColumnName;
+        }
+        public string CalcValue { get; set; }
+        public string ColumnName { get; set; }
     }
 
     public class OPCClient
@@ -55,6 +92,7 @@ namespace SCADAAggregator
         //public TimeSpan WaitTimeout;
         //public int connectTimeout;
         public List<AggregatorTag> opc_tags;
+        public List<ClientTag> Client_Tags;
         //public List<AggregatorTag> opc_met_tags;
         public List<FaultCode> ls_FaultCodes;
         public List<string> turbine_list;
@@ -65,16 +103,37 @@ namespace SCADAAggregator
         protected System.Timers.Timer ScanningTimer;
         protected System.Timers.Timer SQLTimer;
 
-        public OPCClient(string newProgID)
+
+        private int ScanningRate = 0;
+        private int SQLUpdateRate = 0;
+        private string SQLServer = "";
+        private string SQLUser = "";
+        private string SQLPass = "";
+        private string SQLDB = "";
+        private string SQLTable = "";
+        private string SQLCatalog = "";
+
+        public OPCClient(string newProgID, int newScanningRate, int newSQLUpdateRate, string newSQLServer, string newSQLUser, string newSQLPass, string newSQLDB, string newSQLTable, string newSQLCatalog)
         {
             opc_tags = new List<AggregatorTag>();
             //opc_met_tags = new List<AggregatorTag>();
             ls_FaultCodes = new List<FaultCode>();
             turbine_list = new List<string>();
             DAGroups = new List<OpcDaGroup>();
+            Client_Tags = new List<ClientTag>();
             //met_list = new List<string>();
             this.ProgID = newProgID;
             bScanning = true;
+            //Log = new ILog();
+            ScanningRate = newScanningRate;
+            SQLUpdateRate = newSQLUpdateRate;
+            SQLServer = newSQLServer;
+            SQLUser = newSQLUser;
+            SQLPass = newSQLPass;
+            SQLDB = newSQLDB;
+            SQLTable = newSQLTable;
+            SQLCatalog = newSQLCatalog;
+
         }
 
         public void InitializeComponent()
@@ -86,6 +145,7 @@ namespace SCADAAggregator
             ScanningTimer.AutoReset = false;
             SQLTimer = new System.Timers.Timer();
             SQLTimer.Enabled = false;
+            // MWH SQL Timer should be 600000
             SQLTimer.Interval = 600000;
             SQLTimer.Elapsed += OnTimedSQLPush;
             SQLTimer.AutoReset = false;
@@ -116,11 +176,20 @@ namespace SCADAAggregator
             if (myTag != null)
             {
                 myTag.Transforms.Add(newTag.Transform);
+                myTag.WBI_Columns.Add(newTag.WBI_Column);
             }
             else
             {
                 newTag.Transforms.Add(newTag.Transform);
+                newTag.WBI_Columns.Add(newTag.WBI_Column);
                 opc_tags.Add(newTag);
+                //Client_Tags.Add();
+                //iIndex = curTag.OPCTag.IndexOf('%');
+                //trueTagname = curTag.OPCTag.Substring(0, iIndex) + curTurbine + curTag.OPCTag.Substring(iIndex + 1);
+
+                //newTag = new ClientTag(trueTagname, curTag);
+                ////curTag.SetTagname(trueTagname);
+                //Client_Tags.Add(newTag);
             }
 
             //Console.WriteLine("\nFind: Part where name contains \"seat\": {0}",
@@ -239,10 +308,16 @@ namespace SCADAAggregator
             OpcDaItemDefinition[] definitions = new OpcDaItemDefinition[opc_tags.Count];
             int iCount = 0;
             int iIndex = 0;
+            ClientTag newTag;
             foreach (AggregatorTag curTag in opc_tags)
             {
                 iIndex = curTag.OPCTag.IndexOf('%');
                 trueTagname = curTag.OPCTag.Substring(0, iIndex) + curTurbine + curTag.OPCTag.Substring(iIndex+1);
+
+                newTag = new ClientTag(trueTagname, curTag);
+                //curTag.SetTagname(trueTagname);
+                Client_Tags.Add(newTag);
+                definitions[iCount] = new OpcDaItemDefinition();
                 definitions[iCount].ItemId = trueTagname;
                 definitions[iCount].IsActive = true;
                 //definition = new OpcDaItemDefinition;
@@ -260,7 +335,7 @@ namespace SCADAAggregator
                 {
                     Console.WriteLine("Error adding items: {0}", result.Error);
                     //Log.Error("Error adding item: [" + ItemID + "] Error: [" + result.Error.ToString() + "]");
-                    bItemAdded = false;
+                    //bItemAdded = false;
                     try
                     {
                         // Add this item to a bad items list to be retried
@@ -273,77 +348,17 @@ namespace SCADAAggregator
                 }
                 else
                 {
+                    ClientTag isFound = Client_Tags.Find(x => x.OPCTag.Contains(result.Item.ItemId));
+                    if(isFound != null)
+                    {
+                        isFound.bAdded = true;
+                    }
                     //Log.Info("Item [" + ItemID + "] Added successfully");
                 }
             }
 
             return bItemAdded;
         }
-
-        //internal bool AddItem()
-        //{
-        //    bool bItemAdded = false;
-        //    bool bConnected = false;
-        //    try
-        //    {
-        //        bConnected = myServer.IsConnected;
-        //    }
-        //    catch (Exception)
-        //    {
-        //        bConnected = false;
-        //    }
-        //    if (bConnected)
-        //    {
-        //        // Create a group with items.
-        //        try
-        //        {
-        //            myGroup = myServer.AddGroup("AutoRestartGroup");
-
-        //        }
-        //        catch (Exception)
-        //        {
-        //            return false;
-        //        }
-
-        //        // Configure subscription.
-        //        myGroup.ValuesChanged += OnGroupValuesChanged;
-        //        myGroup.UpdateRate = TimeSpan.FromMilliseconds(1000); // ValuesChanged won't be triggered if zero
-        //        myGroup.IsActive = true;
-
-        //        var definition = new OpcDaItemDefinition
-        //        {
-        //            ItemId = ItemID,
-        //            IsActive = true
-        //        };
-        //        OpcDaItemDefinition[] definitions = { definition };
-        //        OpcDaItemResult[] results = myGroup.AddItems(definitions);
-
-        //        // Handle adding results.
-        //        bItemAdded = true;
-        //        foreach (OpcDaItemResult result in results)
-        //        {
-        //            if (result.Error.Failed)
-        //            {
-        //                //Console.WriteLine("Error adding items: {0}", result.Error);
-        //                //Log.Error("Error adding item: [" + ItemID + "] Error: [" + result.Error.ToString() + "]");
-        //                bItemAdded = false;
-        //                try
-        //                {
-        //                    Disconnect();
-        //                }
-        //                catch (Exception)
-        //                {
-
-        //                }
-        //            }
-        //            else
-        //            {
-        //                //Log.Info("Item [" + ItemID + "] Added successfully");
-        //            }
-        //        }
-        //    }
-        //    return bItemAdded;
-        //}
 
         static void OnGroupValuesChanged(object sender, OpcDaItemValuesChangedEventArgs args)
         {
@@ -359,7 +374,7 @@ namespace SCADAAggregator
         {
             bool bReadSuccessful = false;
             bool bConnected = false;
-            Log.Info("Reading Values");
+            //Log.Info("Reading Values");
 
             // Read all items of the group synchronously.
             try
@@ -373,53 +388,65 @@ namespace SCADAAggregator
             if (bConnected == true)
             {
                 OpcDaItemValue[] values;
-                foreach (OpcDaGroup myGroup in DAGroups)
+                //myServer.Groups
+                foreach (OpcDaGroup myGroup in myServer.Groups)
                 {
                     try
                     {
                         //Log.Info("Sending Sync Read");
-                        values = myGroup.Read(myGroup.Items);//, OpcDaDataSource.Device);
+                        Console.WriteLine("Sending Sync Read");
+                        values = myGroup.Read(myGroup.Items, OpcDaDataSource.Device);
 
                     }
                     catch (Exception)
                     {
-                        Log.Info("Exception while reading values");
+                        //Log.Info("Exception while reading values");
 
                         return false;
                     }
+                    ClientTag myTag = null;
                     foreach (OpcDaItemValue value in values)
                     {
-                        //object tempValue;
-                        ////value.Value;
-                        //try
-                        //{
-                        //    tempValue = Convert.ToString(value.Value);
-                        //}
-                        //catch (Exception)
-                        //{
-                        //    tempValue = -999;
-                        //}
-                        //Log.Info("Evaluating OPC Item [" + ItemID + "] read successfully. Value: [" + tempValue + "] Quality: [" + Convert.ToDouble(value.Quality.Status) + "] Timestamp set to [" + DateTime.Now + "]");
-                        //if ((value.Quality.Status & OpcDaQualityStatus.Good) == OpcDaQualityStatus.Good || lastUpdated == DateTime.MinValue)
-                        //{
-                        //    //Log.Info("OPC Item [" + ItemID + "] read successfully. Value: [" + tempValue + "] Quality: [" + value.Quality.Status.ToString() + "] Timestamp set to [" + DateTime.Now + "]");
-                        //    if (tempValue != Value)
-                        //    {
-                        //        Value = tempValue;
-                        //        lastUpdated = DateTime.Now;
-                        //        Log.Info("OPC Item [" + ItemID + "] has changed. Updating stored value and timestamp");
-                        //    }
-                        //    else
-                        //    {
-                        //        Log.Info("OPC Item [" + ItemID + "] has NOT changed. Ignoring read");
-                        //    }
-                        //}
-                        //else
-                        //{
-                        //    Log.Warn("OPC Item [" + ItemID + "] has come back with BAD quality. This does NOT count as a valid update");
-                        //}
-                        //bReadSuccessful = true;
-                        ////Console.WriteLine("Item: " + value.Item.ItemId.ToString() + " Value: " + value.Value.ToString());
+                        object tempValue;
+                        //value.Value;
+                        try
+                        {
+                            tempValue = Convert.ToString(value.Value);
+                        }
+                        catch (Exception)
+                        {
+                            tempValue = -999;
+                        }
+                        //Console.WriteLine("Evaluating OPC Item [" + value.Item.ItemId + "] read successfully. Value: [" + tempValue + "] Quality: [" + Convert.ToDouble(value.Quality.Status) + "] Timestamp set to [" + value.Timestamp.ToString() + "]");
+                        if ((value.Quality.Status & OpcDaQualityStatus.Good) == OpcDaQualityStatus.Good)// || lastUpdated == DateTime.MinValue)
+                        {
+                            //AggregatorTag myTag = null;
+                            myTag = Client_Tags.Find(x => x.OPCTag.Contains(value.Item.ItemId));
+                            if(myTag != null)
+                            {
+                                //Console.WriteLine("Item found and adding to collected Values");
+                                myTag.CollectedValues.Add(value);
+                            }
+                            //Log.Info("OPC Item [" + ItemID + "] read successfully. Value: [" + tempValue + "] Quality: [" + value.Quality.Status.ToString() + "] Timestamp set to [" + DateTime.Now + "]");
+                            //if (tempValue != Value)
+                            //{
+                            //    Value = tempValue;
+                            //    lastUpdated = DateTime.Now;
+                            //    Log.Info("OPC Item [" + ItemID + "] has changed. Updating stored value and timestamp");
+                            //}
+                            //else
+                            //{
+                            //    Log.Info("OPC Item [" + ItemID + "] has NOT changed. Ignoring read");
+                            //}
+
+                        }
+                        else
+                        {
+                            Console.WriteLine("OPC Item [" + value.Item.ItemId + "] has come back with BAD quality. This does NOT count as a valid update");
+                            //Log.Warn("OPC Item [" + ItemID + "] has come back with BAD quality. This does NOT count as a valid update");
+                        }
+                        bReadSuccessful = true;
+                        //Console.WriteLine("Item: " + value.Item.ItemId.ToString() + " Value: " + value.Value.ToString());
                     }
 
                 }
@@ -474,6 +501,27 @@ namespace SCADAAggregator
 
         internal void Scan()
         {
+            //DateTime nowTime = DateTime.Now;
+            //Debug.Print("Seconds is {0}", nowTime.Second);
+            //if (nowTime.Second % (ScanningRate / 1000) == 0)
+            {
+                //ScanningTimer.Enabled = true;
+                ScanningTimer.Interval = GetScanningInterval();
+                ScanningTimer.Start();
+                Debug.Print("Enabling Scan Scanning Timer");
+
+            }
+            //nowTime = DateTime.Now;
+            //Debug.Print("Minutes is {0}", nowTime.Minute);
+            //if (nowTime.Minute % 10 == 0)
+            //if (nowTime.Second % (ScanningRate / 1000) == 0)
+            {
+                SQLTimer.Interval = GetSQLScanningInterval();
+                SQLTimer.Start();
+                Debug.Print("Enabling SQL Scanning Timer");
+
+            }
+
             while (bScanning)
             {
                 // if not connected then connect and add tags
@@ -499,30 +547,32 @@ namespace SCADAAggregator
                 // Add items that were not added succesfully?
 
                 // Setup Timer Synchronization
-                if( ScanningTimer.Enabled == false)
-                {
-                    DateTime nowTime = DateTime.Now;
-                    Debug.Print("Seconds is {0}", nowTime.Second);
-                    if (nowTime.Second % 10 == 0)
-                    {
-                        //ScanningTimer.Enabled = true;
-                        ScanningTimer.Start();
-                        Debug.Print("Enabling Scan Scanning Timer");
+                //if( ScanningTimer.Enabled == false)
+                //{
+                //    DateTime nowTime = DateTime.Now;
+                //    //Debug.Print("Seconds is {0}", nowTime.Second);
+                //    if (nowTime.Second % (ScanningRate / 1000) == 0)
+                //    {
+                //        //ScanningTimer.Enabled = true;
+                //        ScanningTimer.Start();
+                //        Debug.Print("Enabling Scan Scanning Timer");
                         
-                    }
-                }
+                //    }
+                //}
 
-                if (SQLTimer.Enabled == false)
-                {
-                    DateTime nowTime = DateTime.Now;
-                    //Debug.Print("Minutes is {0}", nowTime.Minute);
-                    if (nowTime.Minute % 10 == 0)
-                    {
-                        SQLTimer.Start();
-                        Debug.Print("Enabling SQL Scanning Timer");
+                //if (SQLTimer.Enabled == false)
+                //{
+                //    DateTime nowTime = DateTime.Now;
+                //    //Debug.Print("Minutes is {0}", nowTime.Minute);
+                //    //if (nowTime.Minute % 10 == 0)
+                //    if (nowTime.Second % (ScanningRate / 1000) == 0)
+                //    {
+                //        SQLTimer.Interval = GetSQLScanningInterval();
+                //        SQLTimer.Start();
+                //        Debug.Print("Enabling SQL Scanning Timer");
 
-                    }
-                }
+                //    }
+                //}
                 // Start collection of values for aggregation
                 // Every 10 second read items and add to collection
                 //
@@ -539,7 +589,7 @@ namespace SCADAAggregator
             int iGroupCount = 0;
             string szGroupName;
             OpcDaGroup newGroup;
-            TimeSpan UpdateRate = new TimeSpan(0,0,0,10);
+            TimeSpan UpdateRate = new TimeSpan(0,0,0, (ScanningRate / 1000));
             //OpcDaGroupState GroupState;
             foreach (string curTurbine in turbine_list)
             {
@@ -558,7 +608,7 @@ namespace SCADAAggregator
 
         private void OnTimedScanTime(Object source, ElapsedEventArgs e)
         {
-            //this.ReadValues();
+            ReadValues();
 
             // Re-adjust the timer to ensure we run on at the 10 second mark
             Console.WriteLine("The Elapsed Scanned event was raised at {0:HH:mm:ss.fff}",
@@ -568,13 +618,31 @@ namespace SCADAAggregator
            
         }
 
+        // Get how long it is to execute closest to the next scan interval.
         private double GetScanningInterval()
         {
             DateTime now = DateTime.Now;
-            double iMilliseconds = ((10 - (now.Second % 10)) * 1000 - now.Millisecond);
+            double iMilliseconds = (((ScanningRate / 1000) - (now.Second % 10)) * 1000 - now.Millisecond);
 
             Console.WriteLine("Scanning Interval {0}",
                   iMilliseconds);
+            return iMilliseconds;
+        }
+
+
+        // Get how long it is to execute closest to the next SQL Push time.
+        private double GetSQLScanningInterval()
+        {
+            DateTime now = DateTime.Now;
+            // total scan time  - (Minutes % 10 - seconds - milliseconds)
+            //double iMilliseconds = (((SQLUpdateRate / 1000) - (now.Second % 10)) * 1000 - now.Millisecond);
+            // 300 000 - 3 
+            double iMilliseconds = SQLUpdateRate - (((now.Minute % (SQLUpdateRate / 60000)) * 60000) + (now.Second * 1000) + now.Millisecond);
+
+            Console.WriteLine("SQL Scanning Interval {0}",
+                  iMilliseconds);
+            Console.WriteLine("SQLUpdateRate {0} - (Now.Minute {1} % {2} + ((now.Second % 10) * 1000) {3} + Millisecond {4} : CurrentTime {5:HH:mm:ss.fff}",
+                    SQLUpdateRate, now.Minute, SQLUpdateRate / 60000, ((now.Second % 10) * 1000), now.Millisecond, now);
             return iMilliseconds;
         }
 
@@ -582,11 +650,229 @@ namespace SCADAAggregator
         {
             Console.WriteLine("The Elapsed SQL event was raised at {0:HH:mm:ss.fff}",
                               e.SignalTime);
+            SQLConnect();
+
+            SQLTimer.Interval = GetSQLScanningInterval();
+            SQLTimer.Start();
         }
 
         private bool SQLConnect()
         {
-            throw new NotImplementedException();
+            //SqlConnection SQLConn = new SqlConnection("Data Source=(local)\\SQLEXPRESS;Initial Catalog=WCS;Integrated Security=SSPI");
+            string szConnectionString = "Data Source=(local)\\SQLEXPRESS;Initial Catalog=WCS;Integrated Security=SSPI";
+            //SqlDataReader rdr = null;
+            try
+            {
+                string sqlCmd;
+                //SQLConn.Open();
+                foreach (string szTurbine in turbine_list)
+                {
+                    sqlCmd = BuildSQLCommand(szConnectionString, szTurbine);
+                }
+                //SqlCommand cmd = new SqlCommand(sqlCmd, SQLConn);
+                //rdr = cmd.ExecuteReader();
+                //while(rdr.Read())
+                //{
+                //    Console.WriteLine(rdr[1]);
+                //}
+            }
+            finally
+            {
+                //if(rdr != null)
+                //{
+                //    rdr.Close();
+                //}
+                //if (SQLConn != null)
+                //{
+                //    SQLConn.Close();
+                //}
+                foreach(ClientTag myTag in Client_Tags)
+                {
+                    myTag.CollectedValues.Clear();
+                }
+            }
+            //throw new NotImplementedException();
+            return true;
+        }
+
+        private string BuildSQLCommand(string szConnectionString, string szTurbine) //SqlConnection SQLConn, string szTurbine)
+        {
+
+            string szNewConnection;
+            szNewConnection = "Data Source=" + SQLServer + ";Initial Catalog=" + SQLCatalog + ";Integrated Security=SSPI;User ID=" + SQLUser + ";Password=" + SQLPass + ";";
+
+            //SqlConnection SQLConn = new SqlConnection("Data Source=(local)\\SQLEXPRESS;Initial Catalog=WCS;Integrated Security=SSPI");
+            SqlConnection SQLConn = new SqlConnection(szNewConnection);
+            string sqlCommand = "";
+            string szTransform;
+            string szColumn;
+            string szResult;
+
+            string[] transformarray;
+            string[] columnsArray;
+            CalcColumn ResultHolder;
+
+            try
+            { 
+                SQLConn.Open();
+                List<CalcColumn> ResultList = new List<CalcColumn>();
+            
+                ResultHolder = new CalcColumn(System.DateTime.Now.ToString(), "date_time_stamp");
+                ResultList.Add(ResultHolder);
+                ResultHolder = new CalcColumn(szTurbine, "device_id");
+                ResultList.Add(ResultHolder);
+
+                foreach (ClientTag curTag in Client_Tags)
+                {
+                    if (curTag.OPCTag.Contains(szTurbine))
+                    {
+                        transformarray = curTag.Transforms.ToArray();
+                        columnsArray = curTag.WBI_Columns.ToArray();
+                        for (int i = 0; i < transformarray.Count(); i++)
+                        {
+                            //curTag.CollectedValues;
+                            szTransform = transformarray[i];
+                            szColumn = columnsArray[i];
+                            szResult = DoCalculations(szTransform, curTag.CollectedValues);
+                            ResultHolder = new CalcColumn(szResult, szColumn);
+
+                            ResultList.Add(ResultHolder);
+
+                        }
+                    }
+                }
+
+                string SQLCommandString = "Insert into dbo.[" + SQLTable + "] (";
+                int iCount = 1;
+                foreach(CalcColumn curCalc in ResultList)
+                {
+                    SQLCommandString += curCalc.ColumnName;
+                    if(iCount != ResultList.Count())
+                    {
+                        SQLCommandString += ",";
+                    }
+                
+                    iCount++;
+                }
+                iCount = 1;
+                SQLCommandString += ") VALUES (";
+                foreach (CalcColumn curCalc in ResultList)
+                {
+                    SQLCommandString += "@" + curCalc.ColumnName;
+                    if (iCount != ResultList.Count())
+                    {
+                        SQLCommandString += ",";
+                    }
+
+                    iCount++;
+                }
+                SQLCommandString += ")";
+
+                SqlCommand command = new SqlCommand(SQLCommandString, SQLConn);
+
+                foreach (CalcColumn curCalc in ResultList)
+                {
+                    command.Parameters.AddWithValue("@" + curCalc.ColumnName, curCalc.CalcValue);
+                    Console.WriteLine("ColumnName {0} Value {1}", curCalc.ColumnName, curCalc.CalcValue);
+                }
+
+                //SQLConn.Open();
+                Console.WriteLine(SQLCommandString);
+                int result = command.ExecuteNonQuery();
+                
+
+                // Check Error
+                if (result < 0)
+                    Console.WriteLine("Error inserting data into Database!");
+            }
+            finally
+            {
+                if (SQLConn != null)
+                    SQLConn.Close();
+            }
+
+            return sqlCommand;
+        }
+
+        private string DoCalculations(string szTransform, List<OpcDaItemValue> valueCollection)
+        {
+            string szResult = "";
+            double dValue = -99112233;
+            List<double> valList;
+
+            switch (szTransform.ToUpper())
+            {
+                case "MAX":
+                    foreach(OpcDaItemValue val in valueCollection)
+                    {
+                        if(dValue < Convert.ToDouble(val.Value) || dValue == -99112233)
+                        {
+                            dValue = Convert.ToDouble(val.Value);
+                        }
+                    }
+                    break;
+                case "MIN":
+                    foreach (OpcDaItemValue val in valueCollection)
+                    {
+                        if (dValue > Convert.ToDouble(val.Value) || dValue == -99112233)
+                        {
+                            dValue = Convert.ToDouble(val.Value);
+                        }
+                    }
+                    break;
+                case "MEAN":
+                    valList = new List<double>();
+                    foreach (OpcDaItemValue val in valueCollection)
+                    {
+                        valList.Add(Convert.ToDouble(val.Value));
+                    }
+                    if (valList.Count > 0)
+                        dValue = valList.Average();
+                    else
+                        dValue = 0;
+                    break;
+                case "STDDEV":
+                    valList = new List<double>();
+                    foreach (OpcDaItemValue val in valueCollection)
+                    {
+                        valList.Add(Convert.ToDouble(val.Value));
+                    }
+                    if (valList.Count > 0)
+                        dValue = CalculateStdDev(valList);
+                    else
+                        dValue = 0;
+                    break;
+                case "LAST":
+                default:
+                    foreach (OpcDaItemValue val in valueCollection)
+                    {
+                        dValue = Convert.ToDouble(val.Value);
+                        
+                    }
+                    break;
+                    
+            }
+
+            if (dValue == -99112233)
+                szResult = "";
+            else
+                szResult = dValue.ToString();
+            return szResult;
+        }
+
+        private double CalculateStdDev(IEnumerable<double> values)
+        {
+            double ret = 0;
+            if (values.Count() > 0)
+            {
+                //Compute the Average      
+                double avg = values.Average();
+                //Perform the Sum of (value-avg)_2_2      
+                double sum = values.Sum(d => Math.Pow(d - avg, 2));
+                //Put it all together      
+                ret = Math.Sqrt((sum) / (values.Count() - 1));
+            }
+            return ret;
         }
 
         private bool IsSQLConnected()

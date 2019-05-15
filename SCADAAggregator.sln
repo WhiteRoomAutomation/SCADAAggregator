@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27703.2000
+# Visual Studio 14
+VisualStudioVersion = 14.0.25123.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SCADAAggregator", "SCADAAggregator\SCADAAggregator.csproj", "{BE7B5404-2245-4638-9500-CF420D35876D}"
+EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "Setup", "Setup\Setup.vdproj", "{9BDA1FA6-D35C-45F0-8F60-446B6A843E0C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,9 @@ Global
 		{BE7B5404-2245-4638-9500-CF420D35876D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BE7B5404-2245-4638-9500-CF420D35876D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BE7B5404-2245-4638-9500-CF420D35876D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9BDA1FA6-D35C-45F0-8F60-446B6A843E0C}.Debug|Any CPU.ActiveCfg = Debug
+		{9BDA1FA6-D35C-45F0-8F60-446B6A843E0C}.Release|Any CPU.ActiveCfg = Release
+		{9BDA1FA6-D35C-45F0-8F60-446B6A843E0C}.Release|Any CPU.Build.0 = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
