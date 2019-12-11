@@ -6,13 +6,14 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{BE7B5404-2245-4638-9500-CF420D35876D}</ProjectGuid>
     <OutputType>WinExe</OutputType>
-    <RootNamespace>SCADAAggregator</RootNamespace>
-    <AssemblyName>SCADAAggregator</AssemblyName>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <RootNamespace>OPCScanner</RootNamespace>
+    <AssemblyName>OPCScanner</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <IsWebBootstrapper>false</IsWebBootstrapper>
-    <PublishUrl>C:\Program Files %28x86%29\WRA\Aggregator\</PublishUrl>
+    <TargetFrameworkProfile />
+    <PublishUrl>C:\Program Files %28x86%29\WRA\OPCScanner\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
     <UpdateEnabled>false</UpdateEnabled>
@@ -41,7 +42,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
+    <Optimize>false</Optimize>
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
@@ -60,7 +61,7 @@
     <GenerateManifests>true</GenerateManifests>
   </PropertyGroup>
   <PropertyGroup>
-    <SignManifests>true</SignManifests>
+    <SignManifests>false</SignManifests>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Common.Logging, Version=3.3.0.0, Culture=neutral, PublicKeyToken=af08829b84f0328e, processorArchitecture=MSIL">
@@ -98,9 +99,9 @@
     <Compile Include="OPCClient.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="SCADA_Aggregator.cs" />
-    <Compile Include="SCADA_Aggregator.Designer.cs">
-      <DependentUpon>SCADA_Aggregator.cs</DependentUpon>
+    <Compile Include="OPCScanner.cs" />
+    <Compile Include="OPCScanner.Designer.cs">
+      <DependentUpon>OPCScanner.cs</DependentUpon>
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

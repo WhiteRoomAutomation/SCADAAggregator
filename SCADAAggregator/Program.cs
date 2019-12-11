@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Runtime.InteropServices;
 
-namespace SCADAAggregator
+namespace OPCScanner
 {
     static class Program
     {   
@@ -88,14 +88,14 @@ namespace SCADAAggregator
             // returns the actual executable directory and not something like C:\Windows\System32 
             System.IO.Directory.SetCurrentDirectory(AppDomain.CurrentDomain.BaseDirectory);
 #if DEBUG
-            SCADA_Aggregator myService = new SCADA_Aggregator();
+            OPCScanner myService = new OPCScanner();
             myService.OnDebug();
             System.Threading.Thread.Sleep(System.Threading.Timeout.Infinite);
 #else
             ServiceBase[] ServicesToRun;
             ServicesToRun = new ServiceBase[]
             {
-                new SCADA_Aggregator()
+                new OPCScanner()
             };
             ServiceBase.Run(ServicesToRun);
 #endif

@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("SCADAAggregator")]
+[assembly: AssemblyTitle("WRA OPC Tag Scanner")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("WhiteRoomAutomation")]
-[assembly: AssemblyProduct("SCADAAggregator")]
+[assembly: AssemblyProduct("WRA OPC Tag Scanner")]
 [assembly: AssemblyCopyright("Copyright © WhiteRoomAutomation 2019")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
