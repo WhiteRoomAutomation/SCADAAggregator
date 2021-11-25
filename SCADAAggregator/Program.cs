@@ -68,6 +68,7 @@ namespace OPCScanner
         /// </summary>
         static void Main()
         {
+            
             // Set threading apartment
             // system.Threading.Thread.CurrentThread.ApartmentState = System.Threading.ApartmentState.MTA;
             UInt32 hResult = ComAPI.CoInitializeSecurity(
@@ -88,9 +89,17 @@ namespace OPCScanner
             // returns the actual executable directory and not something like C:\Windows\System32 
             System.IO.Directory.SetCurrentDirectory(AppDomain.CurrentDomain.BaseDirectory);
 #if DEBUG
-            OPCScanner myService = new OPCScanner();
-            myService.OnDebug();
-            System.Threading.Thread.Sleep(System.Threading.Timeout.Infinite);
+            try
+            {
+                OPCScanner myService = new OPCScanner();
+                myService.OnDebug();
+                System.Threading.Thread.Sleep(System.Threading.Timeout.Infinite);
+            }
+            catch (Exception)
+            {
+
+                
+            }
 #else
             ServiceBase[] ServicesToRun;
             ServicesToRun = new ServiceBase[]

@@ -106,6 +106,10 @@ namespace OPCScanner
 
         protected override void OnStart(string[] args)
         {
+            try
+            {
+
+            
             ServiceStatus serviceStatus = new ServiceStatus();
             serviceStatus.dwCurrentState = ServiceState.SERVICE_START_PENDING;
             serviceStatus.dwWaitHint = 100000;
@@ -134,6 +138,12 @@ namespace OPCScanner
             
             serviceStatus.dwCurrentState = ServiceState.SERVICE_RUNNING;
             SetServiceStatus(this.ServiceHandle, ref serviceStatus);
+            }
+            catch (Exception exStart)
+            {
+                Log.Error("Startup Error ", exStart);
+                throw;
+            }
         }
 
         private void CreateThreads()
@@ -230,6 +240,7 @@ namespace OPCScanner
                 {
                     string szOPCServer = tempAttribute.Value;
                     string szHostname;
+                    string szOutput;
                     tempAttribute = nodeList.Attributes.GetNamedItem("Hostname");
                     if (tempAttribute != null)
                         szHostname = tempAttribute.Value;
@@ -264,12 +275,29 @@ namespace OPCScanner
                     //else
                     //    szNameColumn = "TURBINE_NAME";
 
-                    OPCClient CurrentServer = new OPCClient(szOPCServer, szHostname, ScanningTimer, Log);
+                    tempAttribute = nodeList.Attributes.GetNamedItem("OutputFile");
+                    if (tempAttribute != null)
+                        szOutput = tempAttribute.Value;
+                    else
+                        szOutput = null;
+
+                    OPCClient CurrentServer = new OPCClient(szOPCServer, szHostname, ScanningTimer, Log,szOutput);
                     OPCClientsList.Add(CurrentServer);
 
                     tempAttribute = nodeList.Attributes.GetNamedItem("Taglist");
                     if (tempAttribute != null)
-                        LoadTaglistConfiguration(tempAttribute.Value, CurrentServer);
+                    {
+                        try
+                        {
+
+                        
+                            LoadTaglistConfiguration(tempAttribute.Value, CurrentServer);
+                        }
+                        catch (Exception ExLoad)
+                        {
+                            Log.Error("Tag Load Error ", ExLoad);
+                        }
+                    }
 
                     //tempAttribute = nodeList.Attributes.GetNamedItem("Turbines");
                     //if (tempAttribute != null)
@@ -301,9 +329,12 @@ namespace OPCScanner
             try
             {
                 var reader = new StreamReader(AppDomain.CurrentDomain.BaseDirectory + Filename);
-                var csv = new CsvReader(reader);
+
+                var csvConfig = new CsvHelper.Configuration.CsvConfiguration(System.Globalization.CultureInfo.InvariantCulture);
+                csvConfig.AllowComments = true;
+                var csv = new CsvReader(reader,csvConfig);
                 
-                csv.Configuration.AllowComments = true;
+               
                 try
                 {
                     var records = csv.GetRecords<ScanningTag>();

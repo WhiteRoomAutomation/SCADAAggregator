@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<Configuration>
+<OPCServers>
+	<Config Hostname="localhost" ProgID="Matrikon.OPC.Simulation.1" Taglist="SimulatedTags.csv" OutputFile="Values.csv" ScanningTimer="1000" />
+</OPCServers>
+</Configuration>

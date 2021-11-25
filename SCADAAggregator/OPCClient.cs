@@ -104,6 +104,17 @@ namespace OPCScanner
             BadReads = 0;
         }
     }
+
+    public class OPCValue
+    {
+       public string myTagName { get; set; }
+        public string myValue { get; set; }
+        public string myQualityText { get; set; }
+        public string myQualityValue { get; set; }
+        public string myTimeStamp { get; set; }
+
+
+    }
     public class OPCClient
     {
         
@@ -111,6 +122,7 @@ namespace OPCScanner
         public string Server_address { get; set; }
         public int UpdateRate;
         public List<OpcDaItem> opc_tags;
+        public string szOutput;
         //public List<FaultTag> fault_tags;
         public List<ScanningTag> Client_Tags;
         //public List<FaultCode> ls_FaultCodes;
@@ -126,7 +138,7 @@ namespace OPCScanner
 
         private string Hostname = null;
 
-        public OPCClient(string newProgID, string newHostName, int newScanningRate, log4net.ILog newLog)
+        public OPCClient(string newProgID, string newHostName, int newScanningRate, log4net.ILog newLog, string newOutput)
         {
             //opc_tags = new List<AggregatorTag>();
             //fault_tags = new List<FaultTag>();
@@ -138,6 +150,12 @@ namespace OPCScanner
             Hostname = newHostName;
             bScanning = true;
             ScanningRate = newScanningRate;
+            szOutput = newOutput;
+
+            if (szOutput == null)
+            {
+                szOutput = "Values.csv";
+            }
 
             Log = newLog;
 
@@ -214,10 +232,19 @@ namespace OPCScanner
             bool bConnected = false;
             try
             {
-                bConnected = myServer.IsConnected;
+                if (myServer == null)
+                {
+                    bConnected = false;
+                }
+
+                else
+                {
+                    bConnected = myServer.IsConnected;
+                }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Log.Error("Connection Failure ", ex);
                 bConnected = false;
             }
             return bConnected;
@@ -228,7 +255,7 @@ namespace OPCScanner
             bool bIsConnected = false;
             try
             {
-            
+                
                 myServer = new OpcDaServer(ProgID, Hostname);
                 myServer.ClientName = "OPCScanner.exe";
             }
@@ -248,9 +275,9 @@ namespace OPCScanner
                     if (bIsConnected)
                         break;
                 }
-                catch (Exception)
+                catch (Exception Ex)
                 {
-
+                    Log.Error("Error Connecting", Ex);
                 }
 
                 Thread.Sleep(Convert.ToInt32(1000));
@@ -284,8 +311,9 @@ namespace OPCScanner
                 {
                     myServer.Connect();
                 }
-                catch (Exception)
+                catch (Exception Ex)
                 {
+                    Log.Error("Error connecting ",  Ex);
                 }
             });
 
@@ -312,8 +340,17 @@ namespace OPCScanner
                 definitions[iCount].IsActive = true;
                 iCount++;
             }
-
-            OpcDaItemResult[] results = currentGroup.AddItems(definitions);
+            OpcDaItemResult[] results = null;
+            try
+            {
+               results = currentGroup.AddItems(definitions);
+            }
+            catch (Exception exAddItems)
+            {
+                Log.Error("Error adding items to group ", exAddItems);
+                throw;
+            }
+             
 
             // Handle adding results.
             bItemAdded = true;
@@ -328,9 +365,9 @@ namespace OPCScanner
                     {
                         // TODO: Add this item to a bad items list to be retried
                     }
-                    catch (Exception)
+                    catch (Exception Ex)
                     {
-
+                        Log.Error("Error adding item", Ex);
                     }
                 }
                 else
@@ -359,6 +396,8 @@ namespace OPCScanner
             //FaultTag myFault = null;
             //ScanningTag myTag = null;
 
+            List<OPCValue> myValues = new List<OPCValue>();
+
             foreach (OpcDaItemValue value in args.Values)
             {
                 double tempValue;
@@ -374,6 +413,15 @@ namespace OPCScanner
 
                 //Log.Info("ItemUpdate {" + value.Item.ItemId + "} Value {" + tempValue.ToString() + "} Quality {" + value.Quality + "} Timestamp {" + GetTimeString(value.Timestamp) + "}");
                 Log.Info("DataUpdate Tagname,Value,QualityText,QualityValue,Timestamp," + value.Item.ItemId + "," + tempValue.ToString() + "," + value.Quality + "," + value.Quality.GetHashCode().ToString() + "," + GetTimeString(value.Timestamp));
+
+                OPCValue myValue = new OPCValue();
+                myValue.myTagName = value.Item.ItemId;
+                myValue.myValue = tempValue.ToString();
+                myValue.myQualityText = value.Quality.ToString();
+                myValue.myQualityValue = value.Quality.GetHashCode().ToString();
+                myValue.myTimeStamp = GetTimeString(value.Timestamp);
+
+                myValues.Add(myValue);
 
                 //myTag = Client_Tags.Find(x => x.OPC_Tagname.Contains(value.Item.ItemId));
                 //if ((value.Quality.Status & OpcDaQualityStatus.Good) == OpcDaQualityStatus.Good)
@@ -399,6 +447,32 @@ namespace OPCScanner
 
                 //}
             }
+
+            if (szOutput != null)
+            {
+
+                StreamWriter myWriter = File.AppendText(szOutput);
+                CsvWriter myCSVWriter;
+                if (myWriter.BaseStream.Length < 10)
+                {
+                    myCSVWriter = new CsvWriter(myWriter,System.Globalization.CultureInfo.InvariantCulture);
+                    myCSVWriter.WriteRecords(myValues);
+                    myWriter.Close();
+                }
+                else
+                {
+                    CsvHelper.Configuration.CsvConfiguration csvconfig = new CsvHelper.Configuration.CsvConfiguration(System.Globalization.CultureInfo.InvariantCulture);
+                    csvconfig.HasHeaderRecord = false;
+
+                    myCSVWriter = new CsvWriter(myWriter, csvconfig);
+                    myCSVWriter.WriteRecords(myValues);
+                    myWriter.Close();
+
+                }
+
+                
+            }
+
         }
 
         //internal bool ReadValues()
@@ -628,105 +702,49 @@ namespace OPCScanner
 
             for(int i = 0; i < iGroupMax; i++)
             {
-                szGroupName = "ScannerGroup_" + i;
-                newGroup = myServer.AddGroup(szGroupName, GroupState);
-
-                if (newGroup != null)
+                try
                 {
-                    // setup the async message handler
-                    newGroup.ValuesChanged += OnGroupValuesChanged;
-                    // setup the update rate to be 1 second
-                    //newGroup.UpdateRate = TimeSpan.FromMilliseconds(ScanningRate);
-                    // groups start inactive and then are set active after all items have been loaded. This is to improve efficiency
-                    newGroup.IsActive = false;
 
-                    newGroup.UpdateRate = UpdateRate;
-                    if (Client_Tags.Count - (i * 100) < 100)
+
+
+                    szGroupName = "ScannerGroup_" + i;
+
+                    newGroup = myServer.AddGroup(szGroupName, GroupState);
+
+                    if (newGroup != null)
                     {
-                        iGroupEnd = Client_Tags.Count;
+                        // setup the async message handler
+                        newGroup.ValuesChanged += OnGroupValuesChanged;
+                        // setup the update rate to be 1 second
+                        //newGroup.UpdateRate = TimeSpan.FromMilliseconds(ScanningRate);
+                        // groups start inactive and then are set active after all items have been loaded. This is to improve efficiency
+                        newGroup.IsActive = false;
+
+                        newGroup.UpdateRate = UpdateRate;
+                        if (Client_Tags.Count - (i * 100) < 100)
+                        {
+                            iGroupEnd = Client_Tags.Count;
+                        }
+                        else
+                            iGroupEnd = (i * 100) + 100;
+
+                        AddItems(newGroup, i * 100, iGroupEnd, Client_Tags);
+                        newGroup.IsActive = true;
                     }
-                    else
-                        iGroupEnd = (i * 100) + 100;
-
-                    AddItems(newGroup, i*100, iGroupEnd, Client_Tags );
-                    newGroup.IsActive = true;
+                    iGroupCount++;
                 }
-                iGroupCount++;
-            }
-            // add all of the fault tags into their own groups with 1 second update.
-            //if(fault_tags.Count > 0)
-            //{
-            //    foreach (Turbine curTurbine in turbine_list)
-            //    {
-            //        try
-            //        {
-            //            newGroup = myServer.AddGroup("FaultTags_" + curTurbine.Name, GroupState);
-            //            // setup the async message handler
-            //            newGroup.ValuesChanged += OnGroupValuesChanged;
-            //            // setup the update rate to be 1 second
-            //            newGroup.UpdateRate = TimeSpan.FromMilliseconds(1000);
-            //            // groups start inactive and then are set active after all items have been loaded. This is to improve efficiency
-            //            newGroup.IsActive = false;
-            //            AddFaultItems(newGroup, curTurbine.Name);
-                        
-            //        }
-            //        catch(Exception)
-            //        {
+                catch(Exception exAdd)
+                {
+                    Log.Error("Error in add items ", exAdd);
+                }
 
-            //        }
-            //    }
-            //}
+
+            }
+
+           
         }
 
-        //private void AddFaultItems(OpcDaGroup newGroup, string curTurbine)
-        //{
-
-        //    OpcDaItemDefinition[] definitions = new OpcDaItemDefinition[fault_tags.Count / turbine_list.Count];
-        //    int iCount = 0;
-        //    foreach (FaultTag curTag in fault_tags)
-        //    {
-        //        if (curTurbine == curTag.GetTurbine())
-        //        {
-        //            definitions[iCount] = new OpcDaItemDefinition();
-        //            definitions[iCount].ItemId = curTag.OPCTag;
-        //            definitions[iCount].IsActive = true;
-        //            iCount++;
-        //        }
-        //    }
-
-        //    OpcDaItemResult[] results = newGroup.AddItems(definitions);
-
-        //    // Handle adding results.
-        //    iCount = 0;
-        //    foreach (OpcDaItemResult result in results)
-        //    {
-        //        if (result.Error.Failed)
-        //        {
-        //            string szMessage = "Error adding item {" + definitions[iCount].ItemId + "} Error Message {" + result.Error.ToString() + "}";
-        //            Log.Warn(szMessage);
-
-        //            try
-        //            {
-        //                // TODO: Add this item to a bad items list to be retried
-        //            }
-        //            catch (Exception)
-        //            {
-
-        //            }
-        //        }
-        //        else
-        //        {
-        //            FaultTag isFound = fault_tags.Find(x => x.OPCTag.Contains(result.Item.ItemId));
-        //            if (isFound != null)
-        //            {
-        //                isFound.SetAdded(true);
-        //            }
-        //            //Log.Info("Item [" + ItemID + "] Added successfully");
-        //        }
-        //        iCount++;
-        //    }
-            
-        //}
+       
 
         private void OnTimedScanTime(Object source, ElapsedEventArgs e)
         {
